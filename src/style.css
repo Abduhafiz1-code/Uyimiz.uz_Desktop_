@@ -1,0 +1,220 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-base-100 text-base-content font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  ::selection {
+    @apply bg-primary/20;
+  }
+  /* nozik scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-base-200;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-base-300 rounded-full border-2 border-solid;
+    border-color: transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/40;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
+  }
+  .section {
+    @apply py-14 sm:py-20;
+  }
+  .kicker {
+    @apply text-xs font-bold uppercase tracking-[0.18em] text-primary;
+  }
+  .h1 {
+    @apply text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl;
+  }
+  .h2 {
+    @apply text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-[2.35rem] lg:leading-tight;
+  }
+  .h3 {
+    @apply text-lg font-bold tracking-tight sm:text-xl;
+  }
+  .muted {
+    @apply text-base-content/60;
+  }
+  .card-soft {
+    @apply rounded-3xl border border-base-300/70 bg-base-100 shadow-soft;
+  }
+  .card-hover {
+    @apply transition duration-500 ease-out will-change-transform hover:-translate-y-2 hover:scale-[1.02] hover:shadow-lift;
+  }
+  .float-card {
+    animation: float-card 4.8s ease-in-out infinite;
+  }
+  .float-card-alt {
+    animation: float-card-alt 5.8s ease-in-out infinite;
+  }
+  .float-badge {
+    animation: float-badge 3.4s ease-in-out infinite;
+  }
+  .float-slow {
+    animation: float-slow 7.6s ease-in-out infinite;
+  }
+  .orb-drift {
+    animation: orb-drift 10s ease-in-out infinite;
+  }
+  .animate-fade-up {
+    animation: fade-up 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .animate-pop-in {
+    animation: pop-in 550ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+  .field {
+    @apply w-full rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-sm outline-none transition
+      placeholder:text-base-content/40 focus:border-primary focus:ring-4 focus:ring-primary/10;
+  }
+  .label-x {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-base-content/50;
+  }
+  .skeleton-img {
+    @apply relative overflow-hidden bg-base-200;
+  }
+  .skeleton-img::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.25),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes float-card {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.01);
+  }
+}
+
+@keyframes float-card-alt {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1.5deg);
+  }
+}
+
+@keyframes float-badge {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(10px, -8px, 0);
+  }
+}
+
+@keyframes orb-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -16px, 0) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .float-card,
+  .float-card-alt,
+  .float-badge,
+  .float-slow,
+  .orb-drift,
+  .animate-fade-up,
+  .animate-pop-in {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* nozik grid fon */
+.bg-grid {
+  background-image: radial-gradient(currentColor 0.7px, transparent 0.7px);
+  background-size: 22px 22px;
+}
+
+/* view transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.fade-leave-to {
+  opacity: 0;
+}
