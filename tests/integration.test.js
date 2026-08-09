@@ -18,7 +18,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useListingsStore } from '@/stores/listings'
 
 const BUYER = '+998904445566'
-const SELLER = '+998901112233'
 
 /** Komponentlar o'qiydigan maydonlar — biror biri yo'qolsa sayt buziladi. */
 const LISTING_FIELDS = [
@@ -71,10 +70,28 @@ describe('backend bilan aloqa', () => {
   })
 
   it('filtr va saralash server tomonda ishlaydi', async () => {
-    const cheap = await listings.list({ sort: 'cheap', perPage: 5 })
-    const prices = cheap.items.map((l) => l.price)
-    const sorted = [...prices].sort((a, b) => a - b)
-    expect(prices).toEqual(sorted)
+    // Diqqat: pullik e'lonlar (VIP → Premium → Oddiy) har doim tepada
+    // turadi — bu monetizatsiya mantig'i. Narx bo'yicha saralash har bir
+    // guruh ICHIDA qo'llanadi, shuning uchun butun ro'yxatni emas,
+    // guruhlar ichini tekshiramiz.
+    const cheap = await listings.list({ sort: 'cheap', perPage: 20 })
+    const guruhlar = new Map()
+    for (const l of cheap.items) {
+      const k = l.badge || 'oddiy'
+      if (!guruhlar.has(k)) guruhlar.set(k, [])
+      guruhlar.get(k).push(l.price)
+    }
+    for (const [badge, narxlar] of guruhlar) {
+      const sorted = [...narxlar].sort((a, b) => a - b)
+      expect(narxlar, `"${badge}" guruhi narx bo'yicha saralanmagan`).toEqual(sorted)
+    }
+
+    // Pullik e'lonlar oddiylardan oldin kelishi kerak
+    const rank = { vip: 0, premium: 1 }
+    const ranks = cheap.items.map((l) => rank[l.badge] ?? 2)
+    expect(ranks, 'pullik e\'lonlar tepada bo\'lishi kerak').toEqual(
+      [...ranks].sort((a, b) => a - b)
+    )
 
     const sale = await listings.list({ deal: 'sale', perPage: 5 })
     expect(sale.items.every((l) => l.deal === 'sale')).toBe(true)
@@ -212,13 +229,31 @@ describe('chat', () => {
 describe('shartnoma to\'liq oqimi', () => {
   let listingId
   let contractId
+  let sellerPhone
 
   beforeAll(async () => {
     setActivePinia(createPinia())
-    setToken('')
-    const res = await listings.list({ perPage: 10 })
-    // shartnomasi yo'q e'lonni tanlaymiz
-    listingId = res.items.at(-1).id
+    // Xaridor sifatida kiramiz va SOTUVCHISI aniq bo'lgan e'lonni
+    // tanlaymiz — tasdiqlash bosqichida o'sha egasi bilan kirish uchun.
+    // (Ilgari qat'iy telefon yozilgan edi; seed ma'lumoti o'zgarsa buzilardi.)
+    await loginAs(BUYER)
+    // Shartnoma faqat quyidagi shartlar bajarilganda tuziladi:
+    //   • e'lon "active" (pending emas)
+    //   • hujjatlari tayyor
+    //   • egasi tasdiqlangan va bu xaridorning o'zi emas
+    const res = await listings.list({ deal: 'sale', perPage: 50 })
+    const nomzod = res.items.find(
+      (l) =>
+        l.status === 'active' &&
+        l.contractReady &&
+        l.docs === 'ready' &&
+        l.ownerVerified &&
+        l.ownerPhone &&
+        l.ownerPhone !== BUYER
+    )
+    expect(nomzod, "shartnomaga yaroqli e'lon topilmadi").toBeTruthy()
+    listingId = nomzod.id
+    sellerPhone = nomzod.ownerPhone
   })
 
   it('xaridor shartnoma yaratadi', async () => {
@@ -232,7 +267,7 @@ describe('shartnoma to\'liq oqimi', () => {
   })
 
   it('sotuvchi tasdiqlaydi', async () => {
-    await loginAs(SELLER)
+    await loginAs(sellerPhone)
     const c = await contracts.approve(contractId)
     expect(c.sellerSigned).toBe(true)
     expect(c.myRole).toBe('seller')
