@@ -288,7 +288,7 @@ export default {
     sendCode: 'Send code',
     codeTitle: 'Verification code',
     codeSubtitle: 'Enter the 4-digit code sent to {phone}.',
-    demoHint: 'Demo mode: any 4 digits will work',
+    demoHint: 'The code arrives by SMS. In test mode it is shown here.',
     confirm: 'Confirm',
     resend: 'Resend',
     changePhone: 'Change number',

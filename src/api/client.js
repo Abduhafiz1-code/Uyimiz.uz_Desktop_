@@ -9,6 +9,22 @@ const ROOT = (import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '')
 export const API_ROOT = ROOT
 const API = `${ROOT}/api`
 
+// Production build'da VITE_API_BASE berilmasa, so'rovlar saytning o'z
+// domeniga ketadi va SPA qoidasi ularni index.html ga yo'naltiradi —
+// natijada tushunarsiz "405 Method Not Allowed" chiqadi.
+// Shuning uchun sababni darhol va aniq aytamiz.
+const MISSING_BASE = import.meta.env.PROD && !ROOT
+
+if (MISSING_BASE) {
+  console.error(
+    '[Uyimiz] VITE_API_BASE sozlanmagan!\n' +
+      'Backend manzili berilmagani uchun so\'rovlar shu saytning o\'ziga ketmoqda.\n' +
+      'Vercel → Settings → Environment Variables:\n' +
+      '  VITE_API_BASE = https://uyimiz-backend.onrender.com\n' +
+      'Qo\'shgandan keyin loyihani QAYTA BUILD qiling (Redeploy).'
+  )
+}
+
 const TOKEN_KEY = 'uyimiz.token'
 
 export function getToken() {
@@ -87,6 +103,14 @@ export function setUnauthorizedHandler(fn) {
 }
 
 async function request(path, { method = 'GET', body, form, signal, auth = true } = {}) {
+  if (MISSING_BASE) {
+    throw new ApiError(
+      0,
+      'no_api_base',
+      "Backend manzili sozlanmagan (VITE_API_BASE). Vercel sozlamalariga qo'shib, qayta build qiling."
+    )
+  }
+
   const headers = {}
   const token = getToken()
   if (auth && token) headers['Authorization'] = `Token ${token}`

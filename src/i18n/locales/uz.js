@@ -287,7 +287,7 @@ export default {
     sendCode: 'Kod yuborish',
     codeTitle: 'Tasdiqlash kodi',
     codeSubtitle: '{phone} raqamiga yuborilgan 4 xonali kodni kiriting.',
-    demoHint: 'Demo rejim: istalgan 4 ta raqam ishlaydi',
+    demoHint: "Kod SMS orqali yuboriladi. Test rejimida u shu yerda ko'rsatiladi.",
     confirm: 'Tasdiqlash',
     resend: 'Qayta yuborish',
     changePhone: 'Raqamni o‘zgartirish',
