@@ -4,25 +4,32 @@
 // https://uyimiz-backend.onrender.com). Dev'da bo'sh qoldiriladi va
 // vite.config.js dagi proxy 127.0.0.1:8000 ga yo'naltiradi.
 
-const ROOT = (import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '')
+// Backend manzili.
+//
+//   • dev (npm run dev)  → bo'sh: nisbiy yo'l ishlatiladi va vite proxy
+//                          so'rovlarni 127.0.0.1:8000 ga uzatadi
+//   • production build   → Render'dagi backend
+//
+// VITE_API_BASE berilsa, u har doim ustun turadi (masalan test serveri
+// yoki boshqa domenga ulanish kerak bo'lsa).
+const PROD_API_BASE = 'https://uyimiz-backend.onrender.com'
+
+function resolveRoot() {
+  const fromEnv = (import.meta.env.VITE_API_BASE || '').trim().replace(/\/+$/, '')
+  if (fromEnv) return fromEnv
+  // Env berilmagan: prod'da backend manzili kodga yozilgan qiymatdan
+  // olinadi — aks holda so'rovlar saytning o'ziga ketib, Vercel 404/405
+  // qaytaradi va sabab tushunarsiz bo'ladi.
+  return import.meta.env.PROD ? PROD_API_BASE : ''
+}
+
+const ROOT = resolveRoot()
 
 export const API_ROOT = ROOT
 const API = `${ROOT}/api`
 
-// Production build'da VITE_API_BASE berilmasa, so'rovlar saytning o'z
-// domeniga ketadi va SPA qoidasi ularni index.html ga yo'naltiradi —
-// natijada tushunarsiz "405 Method Not Allowed" chiqadi.
-// Shuning uchun sababni darhol va aniq aytamiz.
-const MISSING_BASE = import.meta.env.PROD && !ROOT
-
-if (MISSING_BASE) {
-  console.error(
-    '[Uyimiz] VITE_API_BASE sozlanmagan!\n' +
-      'Backend manzili berilmagani uchun so\'rovlar shu saytning o\'ziga ketmoqda.\n' +
-      'Vercel → Settings → Environment Variables:\n' +
-      '  VITE_API_BASE = https://uyimiz-backend.onrender.com\n' +
-      'Qo\'shgandan keyin loyihani QAYTA BUILD qiling (Redeploy).'
-  )
+if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE) {
+  console.info(`[Uyimiz] VITE_API_BASE berilmagan — standart backend: ${PROD_API_BASE}`)
 }
 
 const TOKEN_KEY = 'uyimiz.token'
@@ -103,14 +110,6 @@ export function setUnauthorizedHandler(fn) {
 }
 
 async function request(path, { method = 'GET', body, form, signal, auth = true } = {}) {
-  if (MISSING_BASE) {
-    throw new ApiError(
-      0,
-      'no_api_base',
-      "Backend manzili sozlanmagan (VITE_API_BASE). Vercel sozlamalariga qo'shib, qayta build qiling."
-    )
-  }
-
   const headers = {}
   const token = getToken()
   if (auth && token) headers['Authorization'] = `Token ${token}`
