@@ -35,6 +35,9 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const sending = ref(false)
   const pendingPhone = ref('')
+  // Backend SMS'siz test rejimida ishlayaptimi (OTP_TEST_MODE=1).
+  // Shu holda kod javobda keladi va ekranda ko'rsatiladi.
+  const testMode = ref(false)
 
   watch(user, (v) => {
     if (v) localStorage.setItem(KEY, JSON.stringify(v))
@@ -53,6 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const res = await authApi.sendCode(phone)
       pendingPhone.value = phone
+      testMode.value = !!res?.testMode
       // DEBUG rejimidagi backend kodni javobda qaytaradi — dev qulayligi uchun.
       return { ok: true, demoCode: res?.demoCode || null }
     } finally {
@@ -139,7 +143,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    user, token, hasToken, isAuthed, loading, sending, pendingPhone,
+    user, token, hasToken, isAuthed, loading, sending, pendingPhone, testMode,
     sendCode, verify, loginWithPassword, refresh, logout,
     updateProfile, uploadAvatar, verifyIdentity, setName,
   }
