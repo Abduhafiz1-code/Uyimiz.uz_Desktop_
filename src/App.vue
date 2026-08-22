@@ -6,9 +6,13 @@ import ToastHost from '@/components/ToastHost.vue'
 import LoginModal from '@/components/LoginModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useListingsStore } from '@/stores/listings'
+import { useUiStore } from '@/stores/ui'
+import { useI18n } from 'vue-i18n'
 
 const auth = useAuthStore()
 const listings = useListingsStore()
+const ui = useUiStore()
+const { t } = useI18n()
 
 onMounted(async () => {
   // Tumanlar ro'yxati barcha filtrlar uchun kerak.
@@ -28,6 +32,18 @@ watch(
     } else {
       listings.favorites.length = 0
     }
+  }
+)
+
+// Sessiya tugaganda jimgina chiqarib yubormasdan sababini aytamiz.
+// (Ilgari foydalanuvchi hech qanday tushuntirishsiz "chiqib qolar" edi
+// va buni "ro'yxatdan o'tish ishlamadi" deb tushunardi.)
+watch(
+  () => auth.sessionExpired,
+  (v) => {
+    if (!v) return
+    ui.toast(t('auth.sessionExpired'), 'info')
+    auth.clearSessionExpired()
   }
 )
 </script>

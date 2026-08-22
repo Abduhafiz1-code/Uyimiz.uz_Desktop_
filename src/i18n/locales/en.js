@@ -263,6 +263,9 @@ export default {
     become: 'Become an agent',
     becomeText:
       'Not an independent broker — a platform agent. CRM, automatic leads and a bonus system.',
+    empty: 'No verified agents yet',
+    emptyText: 'Agents appear here once an administrator approves them.',
+    activeAds: '{n} listings',
   },
   newbuild: {
     title: 'New developments',
@@ -295,6 +298,7 @@ export default {
     welcome: 'Welcome, {name}!',
     loggedOut: 'You have signed out',
     needLogin: 'Please sign in to continue',
+    sessionExpired: 'Your session expired — please sign in again',
   },
   profile: {
     title: 'Dashboard',
@@ -316,7 +320,8 @@ export default {
     send: 'Send',
     sent: 'Message sent',
     autoReply: 'Hello! The listing is still available. When would you like to view it?',
-    hint: 'This is a demo chat — on the real platform the message reaches the owner.',
+    hint: 'Your message goes straight to the other person.',
+    loginFirst: 'Sign in to send a message',
   },
   contract: {
     approve: 'Approve contract',

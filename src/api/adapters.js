@@ -132,17 +132,71 @@ export function adaptMessage(r) {
   }
 }
 
-/** Chat mavzusi (bitta e'lon bo'yicha suhbat). */
+/**
+ * Chat mavzusi.
+ *
+ * Ikki turi bor:
+ *   `kind === 'listing'` — e'lon bo'yicha suhbat (xaridor ↔ uy egasi)
+ *   `kind === 'direct'`  — to'g'ridan-to'g'ri suhbat (masalan agent bilan)
+ *
+ * `peer*` maydonlari — SUHBATDOSH haqida. Backend ularni so'rov yuborgan
+ * foydalanuvchiga qarab hisoblaydi, shuning uchun ekranda doim to'g'ri
+ * ism chiqadi (ilgari e'lon egasi hamma joyda xaridorning ismini ko'rardi).
+ */
 export function adaptThread(r) {
   if (!r) return null
   return {
     id: r.id,
-    listingId: r.listing,
+    kind: r.kind || (r.listing ? 'listing' : 'direct'),
+    listingId: r.listing ?? null,
     listingTitle: r.listing_title || '',
+    listingDistrict: r.listing_district || '',
     buyerId: r.buyer,
     buyerName: r.buyer_name || '',
+    recipientId: r.recipient ?? null,
+
+    peerId: r.peer_id ?? null,
+    // Eski backendga tushib qolsa ham bo'sh qolmasin.
+    peerName: r.peer_name || r.buyer_name || '',
+    peerRole: r.peer_role || 'user',
+    peerAvatar: r.peer_avatar ? mediaUrl(r.peer_avatar) : '',
+
+    unread: r.unread ?? 0,
     createdAt: r.created_at,
+    updatedAt: r.updated_at || r.created_at,
     lastMessage: r.last_message ? adaptMessage(r.last_message) : null,
+  }
+}
+
+/**
+ * Uyimiz Agent (ommaviy katalog uchun).
+ *
+ * Diqqat: eski `AGENTS` mock massivida `ph` (rasm raqami) maydoni bor edi
+ * va komponentlar `photo(a.ph)` ni chaqirardi. Endi haqiqiy avatar bo'lsa
+ * o'shani, bo'lmasa ID asosidagi barqaror o'rin bosarni beramiz — shu
+ * tufayli har yangilanishda rasm sakramaydi.
+ */
+export function adaptAgent(r) {
+  if (!r) return null
+  const rating = r.rating != null ? Number(r.rating) : 0
+  return {
+    id: r.id,
+    name: r.name || 'Agent',
+    phone: r.phone || '',
+    district: r.district || '',
+    initials: r.initials || '',
+    avatar: r.avatar_url ? mediaUrl(r.avatar_url) : '',
+    rating: Number.isFinite(rating) ? rating : 0,
+    ratingCount: r.rating_count ?? 0,
+    tier: r.tier || 'Yangi',
+    deals: r.deals ?? 0,
+    years: r.years ?? 0,
+    top: !!r.top,
+    responseMinutes: r.avg_response_minutes ?? 0,
+    listingsCount: r.listings_count ?? 0,
+    joined: r.date_joined || null,
+    // Rasm o'rin bosari uchun barqaror urug'.
+    ph: ((Number(r.id) || 0) % 28) + 1,
   }
 }
 

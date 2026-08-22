@@ -262,6 +262,9 @@ export default {
     sortDeals: 'Bitimlar soni bo‘yicha',
     become: 'Agent bo‘lish',
     becomeText: 'Mustaqil makler emas — platforma agenti. CRM, avtomatik mijoz va bonus tizimi.',
+    empty: 'Hozircha tasdiqlangan agent yo‘q',
+    emptyText: 'Agentlar admin tasdig‘idan o‘tgach shu yerda paydo bo‘ladi.',
+    activeAds: '{n} ta e’lon',
   },
   newbuild: {
     title: 'Yangi qurilishlar',
@@ -294,6 +297,7 @@ export default {
     welcome: 'Xush kelibsiz, {name}!',
     loggedOut: 'Tizimdan chiqdingiz',
     needLogin: 'Buning uchun tizimga kiring',
+    sessionExpired: 'Sessiya muddati tugadi — qaytadan kiring',
   },
   profile: {
     title: 'Kabinet',
@@ -315,7 +319,8 @@ export default {
     send: 'Yuborish',
     sent: 'Xabar yuborildi',
     autoReply: 'Assalomu alaykum! E’lon hali aktual. Qachon ko‘rishga kelasiz?',
-    hint: 'Bu demo suhbat — real platformada xabar egasiga boradi.',
+    hint: 'Xabar to‘g‘ridan-to‘g‘ri suhbatdoshingizga boradi.',
+    loginFirst: 'Yozish uchun avval tizimga kiring',
   },
   contract: {
     approve: 'Shartnomani tasdiqlash',

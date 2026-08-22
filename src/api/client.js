@@ -130,9 +130,15 @@ async function request(path, { method = 'GET', body, form, signal, auth = true }
     throw new ApiError(0, 'network', "Serverga ulanib bo'lmadi. Internetni tekshiring.")
   }
 
-  if (res.status === 401) {
+  // Sessiyani faqat HAQIQATAN eskirgan token uchun tozalaymiz.
+  //
+  // Ilgari har qanday 401 tokenni o'chirardi — shu jumladan token
+  // umuman yuborilmagan so'rovlar ham (masalan foydalanuvchi kirmagan
+  // holda sevimlilar tugmasini bosganda). Natijada allaqachon kirgan
+  // foydalanuvchi ham keraksiz "chiqib ketgan" holatga tushardi.
+  if (res.status === 401 && auth && token) {
     setToken('')
-    if (onUnauthorized) onUnauthorized()
+    if (onUnauthorized) onUnauthorized({ reason: 'token_expired' })
   }
 
   if (res.status === 204) return null

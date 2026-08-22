@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useListingsStore } from '@/stores/listings'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { agents as agentsApi } from '@/api'
 import { photo, districtName, formatPrice } from '@/data/listings.js'
 import ListingCard from '@/components/ListingCard.vue'
 import SmartImage from '@/components/SmartImage.vue'
@@ -52,7 +53,28 @@ watch(() => route.params.id, (id) => load(id))
 
 const price = computed(() => (l.value ? formatPrice(l.value, locale.value) : null))
 const district = computed(() => (l.value ? districtName(l.value.district, locale.value) : ''))
-const agent = computed(() => (l.value?.agentId ? store.agents.find((a) => a.id === l.value.agentId) : null))
+// E'lonni olib borayotgan agent — backenddan olinadi (`/api/agents/<id>`).
+// Ilgari qo'lda yozilgan mock ro'yxatdan qidirilardi va shu sababli
+// haqiqiy agentning ma'lumoti hech qachon chiqmasdi.
+const agent = ref(null)
+
+watch(
+  () => l.value?.agentId,
+  async (id) => {
+    if (!id) {
+      agent.value = null
+      return
+    }
+    try {
+      agent.value = await agentsApi.byId(id)
+    } catch {
+      // Agent tasdiqdan chiqarilgan bo'lishi mumkin — hech bo'lmasa
+      // e'londagi ismni ko'rsatamiz.
+      agent.value = l.value?.agentName ? { id, name: l.value.agentName, rating: 0, district: '' } : null
+    }
+  },
+  { immediate: true },
+)
 const fav = computed(() => (l.value ? store.isFav(l.value.id) : false))
 
 const chat = ref(false)
@@ -297,12 +319,25 @@ function share() {
         <div v-if="agent" class="card-soft p-4">
           <p class="text-xs text-base-content/55">{{ $t('listing.needAgent') }}</p>
           <div class="mt-3 flex items-center gap-3">
-            <SmartImage :src="photo(agent.ph, 200)" :seed="'ag' + agent.id" ratio="aspect-square" rounded="rounded-xl w-11 shrink-0" />
+            <img
+              v-if="agent.avatar"
+              :src="agent.avatar"
+              :alt="agent.name"
+              class="h-11 w-11 shrink-0 rounded-xl object-cover"
+            />
+            <div
+              v-else
+              class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/15 text-sm font-extrabold text-accent"
+            >
+              {{ agent.initials || agent.name.slice(0, 2).toUpperCase() }}
+            </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-bold">{{ agent.name }}</p>
               <p class="flex items-center gap-1 text-xs text-accent">
-                <Icon name="star" :size="12" filled />{{ agent.rating }}
-                <span class="text-base-content/45">· {{ districtName(agent.district, locale) }}</span>
+                <Icon name="star" :size="12" filled />{{ agent.rating ? agent.rating.toFixed(1) : '—' }}
+                <span v-if="agent.district" class="text-base-content/45">
+                  · {{ districtName(agent.district, locale) }}
+                </span>
               </p>
             </div>
             <button class="btn btn-sm rounded-xl border-none bg-accent text-accent-content hover:bg-accent/90" @click="needAuth(() => (chat = true))">

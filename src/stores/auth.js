@@ -44,11 +44,19 @@ export const useAuthStore = defineStore('auth', () => {
     else localStorage.removeItem(KEY)
   })
 
-  // Token eskirsa yoki bekor qilinsa — profilni tozalaymiz.
+  // Token eskirsa yoki bekor qilinsa — profilni tozalaymiz va
+  // foydalanuvchiga sababini aytamiz (jimgina "chiqib ketish" eng
+  // chalg'ituvchi holat edi).
+  const sessionExpired = ref(false)
   setUnauthorizedHandler(() => {
+    if (token.value) sessionExpired.value = true
     user.value = null
     token.value = ''
   })
+
+  function clearSessionExpired() {
+    sessionExpired.value = false
+  }
 
   /** Telefonga OTP kod yuboradi. */
   async function sendCode(phone) {
@@ -91,7 +99,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /** Backenddan profilni qayta o'qiydi (sahifa ochilganda chaqiriladi). */
+  /**
+   * Backenddan profilni qayta o'qiydi (sahifa ochilganda chaqiriladi).
+   *
+   * Muhim: tarmoq xatosi (server uxlab qolgan, internet uzilgan) SESSIYANI
+   * BUZMAYDI — keshdagi profil o'z joyida qoladi. Faqat server ochiq-oydin
+   * 401 qaytarsagina chiqamiz. Render'ning bepul tarifidagi servis birinchi
+   * so'rovda 50 soniyagacha "uyg'onadi" va shu paytdagi xatoni sessiya
+   * tugadi deb hisoblash noto'g'ri bo'lardi.
+   */
   async function refresh() {
     token.value = getToken()
     if (!token.value) {
@@ -100,12 +116,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
     try {
       user.value = await authApi.me()
+      sessionExpired.value = false
       return user.value
     } catch (e) {
       if (e?.status === 401) {
         user.value = null
         token.value = ''
+        sessionExpired.value = true
       }
+      // Tarmoq xatosi (status 0) — keshdagi profil qoladi, qayta urinamiz.
       return null
     }
   }
@@ -144,6 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     user, token, hasToken, isAuthed, loading, sending, pendingPhone, testMode,
+    sessionExpired, clearSessionExpired,
     sendCode, verify, loginWithPassword, refresh, logout,
     updateProfile, uploadAvatar, verifyIdentity, setName,
   }

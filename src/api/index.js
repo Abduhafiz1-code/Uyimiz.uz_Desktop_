@@ -3,6 +3,7 @@
 
 import { http, setToken } from './client.js'
 import {
+  adaptAgent,
   adaptContract,
   adaptDistricts,
   adaptListPage,
@@ -143,43 +144,97 @@ export const favorites = {
   },
 }
 
-// ─────────────────────────── Chat ───────────────────────────
+// ─────────────────────────── Agentlar ───────────────────────────
+//
+// Ochiq katalog — token talab qilinmaydi. Ilgari bu ro'yxat frontendda
+// qo'lda yozilgan (mock) edi, shuning uchun haqiqiy agentlar ko'rinmasdi.
 
-export const chat = {
-  /**
-   * Suhbat xabarlari. Backend {items: [...]} qaytaradi.
-   *
-   * Diqqat: e'lon egasi o'z e'lonini `with` parametrisiz ochsa, backend
-   * xabarlar emas, suhbatlar RO'YXATINI qaytaradi. Shuning uchun
-   * `withUserId` berilmasa va javob thread ko'rinishida bo'lsa, uni
-   * alohida belgilaymiz.
-   */
-  async messages(listingId, withUserId = null) {
-    const res = await http.get(
-      `/listings/${listingId}/chat`,
-      withUserId ? { with: withUserId } : null
-    )
-    const items = res?.items || []
-    // Thread ro'yxatida `buyer` maydoni bo'ladi, xabarda esa `text`.
-    const isThreadList = items.length > 0 && items[0] && 'buyer' in items[0]
-    if (isThreadList) {
-      return { kind: 'threads', threads: items.map(adaptThread), messages: [] }
+export const agents = {
+  /** params: {district, q, sort: 'rating'|'deals'|'new', page, perPage} */
+  async list(params = {}, opts) {
+    const res = await http.get('/agents', params, { auth: false, ...opts })
+    return {
+      items: (res?.items || []).map(adaptAgent).filter(Boolean),
+      total: res?.total ?? 0,
+      page: res?.page ?? 1,
+      pageCount: res?.pageCount ?? 1,
     }
-    return { kind: 'messages', threads: [], messages: items.map(adaptMessage) }
   },
 
-  /** Xabar yuboradi; backend yangilangan to'liq ro'yxatni qaytaradi. */
+  /** Bitta agent + uning faol e'lonlari. */
+  async byId(id, opts) {
+    const res = await http.get(`/agents/${id}`, null, { auth: false, ...opts })
+    const agent = adaptAgent(res)
+    if (agent) agent.listings = (res?.listings || []).map(adaptListing).filter(Boolean)
+    return agent
+  },
+}
+
+// ─────────────────────────── Chat ───────────────────────────
+//
+// Backend ikki xil suhbatni qo'llab-quvvatlaydi:
+//   • e'lon suhbati       — /listings/<id>/chat
+//   • to'g'ridan-to'g'ri  — /chats/direct/<userId>   (agent bilan yozishish)
+// Ikkalasi ham bir xil javob qaytaradi: {thread, items}.
+
+/** Backend javobini bitta shaklga keltiradi. */
+function normalizeChat(res) {
+  const items = res?.items || []
+  // E'lon egasi `with` bermay ochsa, backend xabarlar emas — suhbatlar
+  // RO'YXATINI qaytaradi (bu holda javobda `thread` bo'lmaydi).
+  const isThreadList = !res?.thread && items.length > 0 && items[0] && 'buyer' in items[0]
+  if (isThreadList) {
+    return { kind: 'threads', thread: null, threads: items.map(adaptThread), messages: [] }
+  }
+  return {
+    kind: 'messages',
+    thread: res?.thread ? adaptThread(res.thread) : null,
+    threads: [],
+    messages: items.map(adaptMessage),
+  }
+}
+
+export const chat = {
+  /** E'lon bo'yicha suhbat xabarlari. */
+  async messages(listingId, withUserId = null) {
+    return normalizeChat(
+      await http.get(`/listings/${listingId}/chat`, withUserId ? { with: withUserId } : null)
+    )
+  },
+
+  /** E'lon bo'yicha xabar yuborish. */
   async send(listingId, text, withUserId = null) {
     const path = withUserId
       ? `/listings/${listingId}/chat?with=${withUserId}`
       : `/listings/${listingId}/chat`
-    const res = await http.post(path, { text })
-    return (res?.items || []).map(adaptMessage)
+    return normalizeChat(await http.post(path, { text }))
   },
 
+  /** To'g'ridan-to'g'ri suhbat (e'lonsiz) — masalan agent bilan. */
+  async direct(userId) {
+    return normalizeChat(await http.get(`/chats/direct/${userId}`))
+  },
+
+  async sendDirect(userId, text) {
+    return normalizeChat(await http.post(`/chats/direct/${userId}`, { text }))
+  },
+
+  /** Suhbatni ID bo'yicha ochish (chat ro'yxatidan bosilganda). */
+  async thread(threadId) {
+    return normalizeChat(await http.get(`/chats/${threadId}`))
+  },
+
+  async sendToThread(threadId, text) {
+    return normalizeChat(await http.post(`/chats/${threadId}`, { text }))
+  },
+
+  /** Barcha suhbatlar + o'qilmagan xabarlar soni. */
   async myChats() {
     const res = await http.get('/me/chats')
-    return (res?.items || []).map(adaptThread)
+    return {
+      items: (res?.items || []).map(adaptThread),
+      unreadTotal: res?.unreadTotal ?? 0,
+    }
   },
 }
 
@@ -233,4 +288,4 @@ export const ratings = {
   },
 }
 
-export default { auth, districts, listings, favorites, chat, contracts, ratings }
+export default { auth, districts, listings, agents, favorites, chat, contracts, ratings }

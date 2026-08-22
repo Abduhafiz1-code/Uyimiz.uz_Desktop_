@@ -177,16 +177,18 @@ function build(i) {
 
 export const LISTINGS = Array.from({ length: 42 }, (_, i) => build(i))
 
-export const AGENTS = [
-  { id: 1, name: 'Nodira Saidova', district: 'chilonzor', rating: 4.9, deals: 63, years: 6, top: true, ph: 4 },
-  { id: 2, name: 'Aziz Rahimov', district: 'yunusobod', rating: 4.8, deals: 51, years: 5, top: true, ph: 9 },
-  { id: 3, name: 'Gulnora Karimova', district: 'mirzo-ulugbek', rating: 4.7, deals: 44, years: 4, top: false, ph: 12 },
-  { id: 4, name: 'Sherzod Toshmatov', district: 'sergeli', rating: 4.6, deals: 38, years: 3, top: false, ph: 15 },
-  { id: 5, name: 'Malika Yusupova', district: 'yakkasaroy', rating: 4.9, deals: 72, years: 8, top: true, ph: 18 },
-  { id: 6, name: 'Rustam Ochilov', district: 'shayxontohur', rating: 4.5, deals: 29, years: 2, top: false, ph: 21 },
-  { id: 7, name: 'Dilnoza Ergasheva', district: 'mirobod', rating: 4.8, deals: 47, years: 5, top: false, ph: 24 },
-  { id: 8, name: 'Jahongir Umarov', district: 'olmazor', rating: 4.4, deals: 22, years: 2, top: false, ph: 2 },
-]
+// ⚠️ Bu yerda ilgari `AGENTS` — qo'lda yozilgan 8 ta soxta agent ro'yxati
+// turardi. Aynan shu sabab "Agentlar" sahifasida HAQIQIY agentlar hech
+// qachon ko'rinmasdi: sahifa bazaga emas, shu massivga qarardi.
+//
+// Endi agentlar backenddan olinadi:
+//     GET /api/agents        — tasdiqlangan agentlar ro'yxati
+//     GET /api/agents/<id>   — bitta agent + uning faol e'lonlari
+//
+// Kod: `src/api/index.js` → `agents`, store: `stores/listings.js` →
+// `fetchAgents()` / `ensureAgents()`.
+//
+// Massivni qaytarib qo'ymang — u soxta ma'lumotni yana yuzaga chiqaradi.
 
 export const NEWBUILDS = [
   { id: 1, name: 'Yangi Hayot Residence', district: 'sergeli', from: 620, handover: '2027 Q2', dev: 'Golden House', inst: '36 oy', ph: 18 },

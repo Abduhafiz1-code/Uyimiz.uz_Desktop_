@@ -16,11 +16,14 @@ const { locale } = useI18n();
 const latest = computed(() => store.latest);
 const featured = computed(() => store.featured);
 
-// Bosh sahifadagi "tanlangan" va "so'nggi" bloklari backenddan keladi.
-onMounted(() => store.fetchHome());
-const topAgents = computed(() =>
-  [...store.agents].sort((a, b) => b.rating - a.rating).slice(0, 4),
-);
+// Bosh sahifadagi "tanlangan", "so'nggi" bloklari va top agentlar
+// backenddan keladi. `ensureAgents` bir marta yuklaydi — sahifalar
+// orasida qatnaganda qayta so'ramaydi.
+onMounted(() => {
+  store.fetchHome();
+  store.ensureAgents();
+});
+const topAgents = computed(() => store.topAgents);
 
 const STATS = [
   { value: "12 480", key: "listings", icon: "home" },
@@ -366,30 +369,49 @@ const FUTURE = [
           </RouterLink>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div
+        <!-- Agent hali yo'q bo'lsa bu blok umuman ko'rsatilmaydi:
+             bo'sh kataklar saytni tashlandiq qilib ko'rsatadi. -->
+        <div v-if="topAgents.length" class="grid gap-4 sm:grid-cols-2">
+          <RouterLink
             v-for="a in topAgents"
             :key="a.id"
+            to="/agents"
             class="card-soft card-hover flex items-center gap-3.5 p-4">
-            <SmartImage
-              :src="photo(a.ph, 200)"
-              :seed="'a' + a.id"
-              ratio="aspect-square"
-              rounded="rounded-2xl w-14 shrink-0" />
+            <img
+              v-if="a.avatar"
+              :src="a.avatar"
+              :alt="a.name"
+              class="h-14 w-14 shrink-0 rounded-2xl object-cover" />
+            <div
+              v-else
+              class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-base font-extrabold text-primary">
+              {{ a.initials || a.name.slice(0, 2).toUpperCase() }}
+            </div>
             <div class="min-w-0">
               <p class="truncate text-sm font-bold">{{ a.name }}</p>
               <p class="truncate text-xs text-base-content/55">
-                {{ districtName(a.district, locale) }}
+                {{ a.district ? districtName(a.district, locale) : "—" }}
               </p>
               <p
                 class="mt-1 flex items-center gap-1 text-xs font-semibold text-accent">
-                <Icon name="star" :size="12" filled />{{ a.rating }}
+                <Icon name="star" :size="12" filled
+                />{{ a.rating ? a.rating.toFixed(1) : "—" }}
                 <span class="font-normal text-base-content/45"
                   >· {{ $t("listing.deals", { n: a.deals }) }}</span
                 >
               </p>
             </div>
-          </div>
+          </RouterLink>
+        </div>
+
+        <div
+          v-else
+          class="card-soft grid place-items-center px-6 py-12 text-center">
+          <Icon name="user" :size="26" class="text-base-content/25" />
+          <p class="mt-3 text-sm font-bold">{{ $t("agents.empty") }}</p>
+          <p class="mt-1 max-w-xs text-xs text-base-content/55">
+            {{ $t("agents.emptyText") }}
+          </p>
         </div>
       </div>
     </section>

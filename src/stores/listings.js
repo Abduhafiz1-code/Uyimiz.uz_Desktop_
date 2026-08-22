@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { listings as listingsApi, favorites as favApi, districts as districtsApi, filtersToParams } from '@/api'
-import { AGENTS, NEWBUILDS } from '@/data/listings.js'
+import {
+  listings as listingsApi,
+  favorites as favApi,
+  districts as districtsApi,
+  agents as agentsApi,
+  filtersToParams,
+} from '@/api'
+import { NEWBUILDS } from '@/data/listings.js'
 import { useAuthStore } from './auth'
 
 // Eslatma: filtrlash, saralash va sahifalash endi SERVER tomonda bajariladi
@@ -256,11 +262,44 @@ export const useListingsStore = defineStore('listings', () => {
     }
   }
 
-  // Agentlar va yangi binolar uchun backendda ochiq endpoint yo'q
-  // (`/api/crm/...` faqat agent roli uchun). Shuning uchun bu ikki bo'lim
-  // hozircha statik ma'lumot bilan ishlaydi — backendga endpoint
-  // qo'shilgach shu ikki qatorni almashtirish yetarli.
-  const agents = computed(() => AGENTS)
+  // ── Agentlar ────────────────────────────────────────────────────────
+  // Backendda ochiq katalog bor: GET /api/agents (faqat admin tasdiqlagan,
+  // faol agentlar). Ilgari bu yerda qo'lda yozilgan ro'yxat turardi va
+  // shuning uchun HAQIQIY agentlar hech qachon ko'rinmasdi.
+  const agents = ref([])
+  const agentsLoading = ref(false)
+  const agentsError = ref('')
+  const agentsLoaded = ref(false)
+
+  /**
+   * Agentlarni backenddan oladi.
+   * @param {{district?: string, q?: string, sort?: 'rating'|'deals'|'new'}} params
+   */
+  async function fetchAgents(params = {}) {
+    agentsLoading.value = true
+    agentsError.value = ''
+    try {
+      const res = await agentsApi.list({ perPage: 48, ...params })
+      agents.value = res.items
+      agentsLoaded.value = true
+      return res.items
+    } catch (e) {
+      agentsError.value = e?.message || "Agentlarni yuklab bo'lmadi"
+      agents.value = []
+      return []
+    } finally {
+      agentsLoading.value = false
+    }
+  }
+
+  /** Bosh sahifadagi "Top agentlar" bloki uchun — bir marta yuklaydi. */
+  async function ensureAgents() {
+    if (agentsLoaded.value || agentsLoading.value) return agents.value
+    return fetchAgents({ sort: 'rating', perPage: 12 })
+  }
+
+  const topAgents = computed(() => agents.value.slice(0, 4))
+
   const newbuilds = computed(() => NEWBUILDS)
 
   // Eski komponentlar shu nomlarni o'qiydi.
@@ -273,8 +312,10 @@ export const useListingsStore = defineStore('listings', () => {
   return {
     items, all, filtered, paged, total, pageCount, loading, error,
     myAds, favorites, filters, sort, page, perPage, showMap,
-    districtList, ownerCount, agentCount, featured, latest, agents, newbuilds,
+    districtList, ownerCount, agentCount, featured, latest, newbuilds,
+    agents, topAgents, agentsLoading, agentsError, agentsLoaded,
     fetchList, fetchOne, fetchDistricts, fetchFavorites, fetchMyAds, fetchHome,
+    fetchAgents, ensureAgents,
     byId, resetFilters, toggleFav, isFav, favListings, clearFav,
     addAd, removeAd, similar,
   }

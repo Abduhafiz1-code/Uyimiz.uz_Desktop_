@@ -189,6 +189,23 @@ async function saveName() {
             </button>
           </div>
         </div>
+        <!-- Uyimiz Agent bo'lish — ariza alohida portalda topshiriladi -->
+        <a
+          href="https://uyimiz-uz-biznes.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-6 flex items-center gap-3 rounded-xl border border-base-300 p-3.5 transition hover:border-primary hover:bg-primary/5"
+        >
+          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Icon name="badge" :size="17" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-bold">{{ $t('agents.become') }}</span>
+            <span class="block truncate text-xs text-base-content/55">{{ $t('agents.becomeText') }}</span>
+          </span>
+          <Icon name="arrow" :size="16" class="shrink-0 text-base-content/40" />
+        </a>
+
         <div class="mt-6 flex gap-2 border-t border-base-200 pt-5">
           <button class="btn btn-primary rounded-xl" @click="saveName">{{ $t('common.save') }}</button>
           <button class="btn btn-ghost rounded-xl text-error" @click="auth.logout(); ui.toast($t('auth.loggedOut'), 'info')">
